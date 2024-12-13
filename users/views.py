@@ -33,25 +33,40 @@ class LoginView(APIView):
 class LogoutView(APIView):
     def post(self, request):
         refresh_token = request.data.get("refresh")
-        if refresh_token:
-            try:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-                return Response({"detail": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
-            except Exception as e:
-                return Response({"detail": f"Erro: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "Token de refresh não fornecido."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not refresh_token:
+            return Response({"detail": "Token de refresh não fornecido."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Criação do objeto RefreshToken a partir do refresh_token enviado
+            token = RefreshToken(refresh_token)
+            # Coloca o token de refresh na blacklist
+            token.blacklist()
+            return Response({"detail": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Trata exceções que podem ocorrer durante o processo de blacklisting
+            return Response({"detail": f"Erro: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserMinimalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "username": user.name,
+        })
 
 
 class UserMeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
         return Response({
-            "id": request.user.id,
-            "username": request.user.name,
-            "lastname": request.user.lastname,
-            "email": request.user.email,
+            "id": user.id,
+            "username": user.name,
+            "lastname": user.lastname,
+            "email": user.email,
         })
 
 
