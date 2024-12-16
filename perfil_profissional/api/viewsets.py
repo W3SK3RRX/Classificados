@@ -11,22 +11,34 @@ class PerfilProfissionalViewSet(viewsets.ModelViewSet):
     serializer_class = PerfilProfissionalSerializer
 
     def get_permissions(self):
-        """
-        Define permissões diferentes para métodos de leitura e escrita.
-        """
-        if self.action in ['list', 'retrieve']:  # Permite acesso público a GET (list e retrieve)
+        if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]  # Exige autenticação para POST, PUT, PATCH, DELETE
+        return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
+
 
     def perform_create(self, serializer):
-        # Associa o perfil ao usuário autenticado automaticamente
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except Exception as e:
+            raise ValidationError({"detail": f"Erro ao criar perfil: {e}"})
+
 
     @action(detail=False, methods=['get'])
     def meu_perfil(self, request):
         # Rota customizada para listar o perfil do usuário autenticado
-        perfil = self.get_queryset().filter(user=request.user).first()
+        perfil = self.get_queryset().select_related('endereco').filter(user=request.user).first()
         if not perfil:
             return Response({"detail": "Nenhum perfil encontrado."}, status=404)
         serializer = self.get_serializer(perfil)
         return Response(serializer.data)
+
+    
+    @action(detail=True, methods=['patch'], url_path='atualizar-endereco')
+    def atualizar_endereco(self, request, pk=None):
+        perfil = self.get_object()
+        endereco_serializer = EnderecoSerializer(perfil.endereco, data=request.data, partial=True)
+        if endereco_serializer.is_valid():
+            endereco_serializer.save()
+            return Response(endereco_serializer.data)
+        return Response(endereco_serializer.errors, status=400)
+
