@@ -44,4 +44,4 @@ class PerfilProfissionalResumoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PerfilProfissional
-        fields = ['id', 'profile_name', 'cidade', 'estado', 'tipo']
+        fields = ['id', 'foto_logo', 'profile_name', 'cidade', 'estado', 'tipo']
