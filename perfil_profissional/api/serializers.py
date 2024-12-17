@@ -30,8 +30,18 @@ class PerfilProfissionalSerializer(serializers.ModelSerializer):
         if endereco_data:
             for attr, value in endereco_data.items():
                 setattr(instance.endereco, attr, value)
-            instance.endereco.save()
+            instance.endereco.save(update_fields=endereco_data.keys())
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
+    
+# serializers.py
+class PerfilProfissionalResumoSerializer(serializers.ModelSerializer):
+    cidade = serializers.CharField(source='endereco.cidade')
+    estado = serializers.CharField(source='endereco.estado')
+
+    class Meta:
+        model = PerfilProfissional
+        fields = ['id', 'profile_name', 'cidade', 'estado', 'tipo']
