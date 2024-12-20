@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -47,17 +48,8 @@ class LogoutView(APIView):
             # Trata exceções que podem ocorrer durante o processo de blacklisting
             return Response({"detail": f"Erro: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserMinimalView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        return Response({
-            "username": user.name,
-        })
-
-
-class UserMeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -65,9 +57,24 @@ class UserMeView(APIView):
         return Response({
             "id": user.id,
             "username": user.name,
+        })
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        user = get_object_or_404(User, pk=id)
+        if user != request.user:
+            return Response({"detail": "Não autorizado."}, status=403)
+
+        return Response({
+            "id": user.id,
+            "username": user.name,
             "lastname": user.lastname,
             "email": user.email,
         })
+
 
 
 class PasswordResetRequestView(APIView):

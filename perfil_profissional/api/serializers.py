@@ -14,7 +14,7 @@ class PerfilProfissionalSerializer(serializers.ModelSerializer):
     class Meta:
         model = PerfilProfissional
         fields = [
-            'tipo', 'foto_logo', 'profile_name', 'cpf', 'cnpj', 'endereco',
+            'id', 'tipo', 'foto_logo', 'profile_name', 'cpf', 'cnpj', 'endereco',
             'telefone', 'area_atuacao', 'biografia',
             'certificados', 'registros_profissionais', 'concordou_termos'
         ]
