@@ -6,8 +6,8 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('minimal_me/', UserMinimalView.as_view(), name='user_minimal_me'),
-    path('/<uuid:id>/me/', UserProfileView.as_view(), name='user-profile'),
+    path('minimal_user/', UserMinimalView.as_view(), name='minimal_user'),
+    path('users/<uuid:id>/me/', UserProfileView.as_view(), name='user-profile'),
 
     #Recuperação de senha
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),

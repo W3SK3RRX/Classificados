@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 
 User = get_user_model()
 
@@ -55,8 +56,10 @@ class UserMinimalView(APIView):
     def get(self, request):
         user = request.user
         return Response({
-            "id": user.id,
+            "id": str(user.id),
             "username": user.name,
+            "lastname": user.lastname,
+            "email": user.email,
         })
 
 
@@ -74,7 +77,6 @@ class UserProfileView(APIView):
             "lastname": user.lastname,
             "email": user.email,
         })
-
 
 
 class PasswordResetRequestView(APIView):

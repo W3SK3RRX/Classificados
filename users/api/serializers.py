@@ -1,13 +1,13 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 from django.conf import settings
+from users.models import Subscription, User, Plan
+from django.utils.timezone import now
+from datetime import timedelta
 
-
-User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -15,17 +15,86 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'lastname', 'email', 'password', 'password_confirm']
+        fields = ['id', 'name', 'lastname', 'email', 'user_type', 'password', 'password_confirm']
         read_only_fields = ['id']
 
     def validate(self, attrs):
+        # Verifica se as senhas coincidem
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
+
+        # Verifica se o tipo de usuário é válido
+        valid_user_types = [choice[0] for choice in User.USER_TYPE_CHOICES]
+        if attrs.get('user_type') not in valid_user_types:
+            raise serializers.ValidationError({"user_type": "Tipo de usuário inválido."})
+
         return attrs
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         return User.objects.create_user(**validated_data)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['id', 'user', 'start_date', 'end_date', 'active']
+        read_only_fields = ['id', 'active']
+
+    def create(self, validated_data):
+        # Garante que uma assinatura válida seja criada
+        if validated_data['end_date'] <= validated_data['start_date']:
+            raise serializers.ValidationError("A data de término deve ser posterior à data de início.")
+        return super().create(validated_data)
+
+
+class PlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plan
+        fields = ['id', 'name', 'price', 'duration_in_days']
+        read_only_fields = ['id']
+
+
+class UserWithSubscriptionSerializer(serializers.ModelSerializer):
+    subscription = SubscriptionSerializer(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'lastname', 'email', 'user_type', 'subscription']
+        read_only_fields = ['id']
+
+
+class UserWithSubscriptionCreationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True, min_length=8)
+    plan_id = serializers.IntegerField(write_only=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'lastname', 'email', 'user_type', 'password', 'password_confirm', 'plan_id']
+        read_only_fields = ['id']
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({"password": "As senhas não coincidem."})
+
+        if attrs['user_type'] in [User.PROFESSIONAL, User.COMPANY] and not attrs.get('plan_id'):
+            raise serializers.ValidationError({"plan_id": "O plano é obrigatório para profissionais e empresas."})
+
+        return attrs
+
+    def create(self, validated_data):
+        plan_id = validated_data.pop('plan_id', None)
+        validated_data.pop('password_confirm')
+
+        user = User.objects.create_user(**validated_data)
+
+        if plan_id:
+            plan = Plan.objects.get(id=plan_id)
+            end_date = now() + timedelta(days=plan.duration_in_days)
+            Subscription.objects.create(user=user, start_date=now(), end_date=end_date, active=True)
+
+        return user
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
