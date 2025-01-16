@@ -1,15 +1,11 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from users.api.serializers import UserSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 from django.contrib.auth import get_user_model
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+
 
 User = get_user_model()
 
@@ -18,18 +14,42 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
 class LoginView(APIView):
+    """
+    Endpoint para login de usuários usando JWT.
+    """
     def post(self, request, *args, **kwargs):
+        print("Endpoint de login acessado")
         email = request.data.get("email")
         password = request.data.get("password")
-        user = authenticate(email=email, password=password)
 
+        # Verifica se o usuário existe
+        user = User.objects.filter(email=email).first()
+
+        if not user:
+            return Response({"error": "Usuário não encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Verifica se a senha está correta
+        if not user.check_password(password):
+            return Response({"error": "Senha incorreta"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Autentica o usuário
+        user = authenticate(email=email, password=password)
         if user:
+            # Gera os tokens de autenticação
             refresh = RefreshToken.for_user(user)
             return Response({
                 "refresh": str(refresh),
-                "access": str(refresh.access_token)
+                "access": str(refresh.access_token),
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "lastname": user.lastname,
+                    "email": user.email,
+                    "user_type": user.user_type,  # Personalize conforme o modelo
+                }
             }, status=status.HTTP_200_OK)
-        return Response({"error": "Credenciais inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({"error": "Erro de autenticação"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(APIView):
@@ -48,35 +68,6 @@ class LogoutView(APIView):
         except Exception as e:
             # Trata exceções que podem ocorrer durante o processo de blacklisting
             return Response({"detail": f"Erro: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserMinimalView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        return Response({
-            "id": str(user.id),
-            "username": user.name,
-            "lastname": user.lastname,
-            "email": user.email,
-        })
-
-
-class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id):
-        user = get_object_or_404(User, pk=id)
-        if user != request.user:
-            return Response({"detail": "Não autorizado."}, status=403)
-
-        return Response({
-            "id": user.id,
-            "username": user.name,
-            "lastname": user.lastname,
-            "email": user.email,
-        })
 
 
 class PasswordResetRequestView(APIView):
