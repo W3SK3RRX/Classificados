@@ -10,7 +10,8 @@ router.register('subscriptions', SubscriptionViewSet, basename='subscription')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(router.urls)),
+    path('users/', include('users.urls')),  # Rotas adicionais de `users`
+    path('', include(router.urls)),  # Rotas de `viewsets`
     path('perfil-profissional/', include('perfil_profissional.urls')),
-    path('users/', include('users.urls')),  # Incluindo as rotas do app 'users'
 ]
+

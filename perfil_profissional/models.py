@@ -17,6 +17,12 @@ class Endereco(models.Model):
 
 
 class PerfilProfissional(models.Model):
+    # Choices para tipos de usuário
+    TIPO_CHOICES = [
+        ('professional', 'Profissional Liberal'),
+        ('company', 'Empresa'),
+    ]
+
     # Validators para CPF e CNPJ
     def validate_cpf(value):
         if not re.match(r'\d{3}\.\d{3}\.\d{3}-\d{2}', value):
@@ -33,6 +39,9 @@ class PerfilProfissional(models.Model):
 
     # Relação com o usuário
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    # Tipo definido automaticamente com base no user.user_type
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='professional', editable=False)
 
     # Dados do perfil
     foto_logo = models.ImageField(upload_to='uploads/fotos_perfil/', blank=True, null=True)
@@ -65,10 +74,20 @@ class PerfilProfissional(models.Model):
 
     def clean(self):
         # Regras de validação
-        if self.user.user_type == settings.USER_TYPE_PROFESSIONAL and not self.cpf:
+        if self.tipo == 'professional' and not self.cpf:
             raise ValidationError("CPF é obrigatório para profissionais liberais.")
-        if self.user.user_type == settings.USER_TYPE_COMPANY and not self.cnpj:
+        if self.tipo == 'company' and not self.cnpj:
             raise ValidationError("CNPJ é obrigatório para empresas.")
 
+    def save(self, *args, **kwargs):
+        # Inferir o tipo automaticamente com base no user.user_type
+        if self.user.user_type == settings.USER_TYPE_PROFESSIONAL:
+            self.tipo = 'professional'
+        elif self.user.user_type == settings.USER_TYPE_COMPANY:
+            self.tipo = 'company'
+        else:
+            raise ValidationError("Tipo de usuário inválido.")
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.profile_name} ({self.get_user_type_display()})"
+        return f"{self.profile_name} ({dict(self.TIPO_CHOICES).get(self.tipo)})"

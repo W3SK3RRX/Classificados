@@ -3,7 +3,7 @@ from django.urls import path
 
 print("URLs do app 'users' carregado")
 
-from .views import RegisterView, LoginView, LogoutView, PasswordResetRequestView, PasswordResetConfirmView
+from users.views import RegisterView, LoginView, LogoutView, PasswordResetRequestView, PasswordResetConfirmView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),  # Rota para registro

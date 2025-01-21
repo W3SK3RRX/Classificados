@@ -7,6 +7,7 @@ class EnderecoSerializer(serializers.ModelSerializer):
         fields = ['rua', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep']
 
 class PerfilProfissionalSerializer(serializers.ModelSerializer):
+
     endereco = EnderecoSerializer()
 
     class Meta:
@@ -17,6 +18,7 @@ class PerfilProfissionalSerializer(serializers.ModelSerializer):
             'registros_profissionais', 'concordou_termos'
         ]
         read_only_fields = ['id', 'user']
+
 
     def create(self, validated_data):
         endereco_data = validated_data.pop('endereco')
