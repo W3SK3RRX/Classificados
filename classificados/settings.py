@@ -175,3 +175,6 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+D4SIGN_API_URL = 'https://sandbox.d4sign.com.br/api/v1'  # Use 'https://secure.d4sign.com.br/api/v1' em produção
+D4SIGN_API_KEY = 'sua_api_key_aqui'
+D4SIGN_CRYPTO_KEY = 'sua_crypto_key_aqui'
