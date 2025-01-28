@@ -6,9 +6,10 @@ import os
 
 
 class ContratoTemplate(models.Model):
-    nome = models.CharField(max_length=255)  # Nome do template
-    conteudo = models.TextField()  # Conteúdo com placeholders (ex.: {{contratante_nome}}, {{data}})
-    padrao = models.BooleanField(default=False)  # Indica se é um template padrão
+    nome = models.CharField(max_length=255)
+    conteudo = models.TextField()
+    padrao = models.BooleanField(default=False)
+    criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.nome
@@ -88,5 +89,10 @@ class Contrato(models.Model):
         self.contrato_gerado = caminho_arquivo
         self.save()
 
+
+    def titulo(self):
+        return f"Contrato {self.id} - {self.contratante.get_full_name()}"
+
     def __str__(self):
-        return f"Contrato #{self.id} - {self.status}"
+        return self.titulo()
+   
