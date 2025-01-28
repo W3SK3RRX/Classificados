@@ -5,7 +5,7 @@ class ContratoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contrato
         fields = '__all__'
-        read_only_fields = ['status', 'criado_em', 'atualizado_em']
+        read_only_fields = ['status', 'criado_em', 'atualizado_em', 'contrato_gerado']
 
 class ContratoUpdateSerializer(serializers.ModelSerializer):
     class Meta:

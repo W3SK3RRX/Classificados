@@ -10,6 +10,8 @@ class ContratoAssinaturaAPIView(APIView):
     """
     def post(self, request, contrato_id):
         contrato = Contrato.objects.get(pk=contrato_id)
+
+        # Verificar se o contrato foi gerado corretamente
         if not contrato.contrato_gerado:
             return Response({"error": "Contrato PDF não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -17,8 +19,8 @@ class ContratoAssinaturaAPIView(APIView):
         file_path = contrato.contrato_gerado.path
         document_name = f"Contrato_{contrato.id}.pdf"
 
-        # Enviar para o D4Sign
         try:
+            # Enviar para o D4Sign
             document_response = D4SignService.create_document(file_path, document_name, safe_key='seu_safe_key')
             document_key = document_response['uuid']
             contrato.d4sign_document_key = document_key

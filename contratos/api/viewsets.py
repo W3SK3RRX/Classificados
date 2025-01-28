@@ -29,7 +29,8 @@ class ContratoViewSet(ModelViewSet):
         """
         Define o contratante automaticamente com base no usuário autenticado.
         """
-        serializer.save(contratante=self.request.user)
+        contrato = serializer.save(contratante=self.request.user)  # Salva o contrato
+        contrato.salvar_contrato_pdf()  # Gera o PDF após a criação
 
     @action(detail=True, methods=['patch'], url_path='atualizar-status')
     def atualizar_status(self, request, pk=None):
