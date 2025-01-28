@@ -141,13 +141,21 @@ docker-compose up -d
 
 Contribuições são sempre bem-vindas! Para contribuir com o projeto:
 
-Faça um fork do repositório.
-Crie uma nova branch (git checkout -b feature/nome-da-sua-feature).
-Faça as alterações necessárias.
-Faça o commit das suas alterações (git commit -am 'Adiciona nova feature').
-Envie para o seu repositório (git push origin feature/nome-da-sua-feature).
-Abra um Pull Request para o repositório original.
-
+1. Faça um fork do repositório.
+2. Crie uma nova branch
+   ```bash
+   git checkout -b feature/nome-da-sua-feature
+   ```
+4. Faça as alterações necessárias.
+5. Faça o commit das suas alterações
+   ```bash
+   git commit -am 'Adiciona nova feature'
+   ```
+7. Envie para o seu repositório
+   ```bash
+   git push origin feature/nome-da-sua-feature
+   ```
+8. Abra um Pull Request para o repositório original.
 
 ### 11. **Licença**
 
