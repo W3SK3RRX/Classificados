@@ -50,7 +50,7 @@ Rodar o servidor Django no container classificados-web e o banco de dados no con
 Depois que os containers estiverem em execução, entre no container do Django para rodar as migrações e comandos do Django:
 
 ```bash
-docker exec -it classificados-classificados-web-1
+docker exec -it classificados-classificados-web-1 bash
 ```
 
 ### 4. **Executar as Migrações do Banco de Dados**
