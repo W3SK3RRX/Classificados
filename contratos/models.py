@@ -59,17 +59,24 @@ class Contrato(models.Model):
         """
         # Usa o conteúdo personalizado ou o template associado
         conteudo = self.conteudo_personalizado or (self.template.conteudo if self.template else "")
+        
+        # Garante que os nomes sejam extraídos corretamente
+        contratante_nome = self.contratante.get_full_name() if hasattr(self.contratante, 'get_full_name') else self.contratante.username
+        contratado_nome = self.contratado.usuario.get_full_name() if hasattr(self.contratado.usuario, 'get_full_name') else self.contratado.usuario.username
+
         placeholders = {
-            "{{contratante_nome}}": self.contratante.get_full_name(),
-            "{{contratado_nome}}": self.contratado.usuario.get_full_name(),
+            "{{contratante_nome}}": contratante_nome,
+            "{{contratado_nome}}": contratado_nome,
             "{{descricao}}": self.descricao,
             "{{valor}}": f"R$ {self.valor:.2f}",
             "{{prazo_execucao}}": self.prazo_execucao.strftime("%d/%m/%Y"),
             "{{data}}": self.criado_em.strftime("%d/%m/%Y"),
         }
+        
         for key, value in placeholders.items():
             conteudo = conteudo.replace(key, value)
         return conteudo
+
     
     def salvar_contrato_pdf(self):
         """
