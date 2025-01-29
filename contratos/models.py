@@ -62,7 +62,7 @@ class Contrato(models.Model):
         
         # Garante que os nomes sejam extraídos corretamente
         contratante_nome = self.contratante.get_full_name() if hasattr(self.contratante, 'get_full_name') else self.contratante.username
-        contratado_nome = self.contratado.usuario.get_full_name() if hasattr(self.contratado.usuario, 'get_full_name') else self.contratado.usuario.username
+        contratado_nome = self.contratado.user.get_full_name() if hasattr(self.contratado.user, 'get_full_name') else self.contratado.user.email
 
         placeholders = {
             "{{contratante_nome}}": contratante_nome,
@@ -76,6 +76,8 @@ class Contrato(models.Model):
         for key, value in placeholders.items():
             conteudo = conteudo.replace(key, value)
         return conteudo
+
+
 
     
     def salvar_contrato_pdf(self):
@@ -98,7 +100,12 @@ class Contrato(models.Model):
 
 
     def titulo(self):
-        return f"Contrato {self.id} - {self.contratante.get_full_name()}"
+        """Retorna um título para o contrato, incluindo o nome do contratante e do contratado"""
+        contratante_nome = str(self.contratante)  # Usa o campo definido como identificador no User
+        contratado_nome = str(self.contratado.user) # Supondo que o contratado esteja relacionado ao User
+
+        return f"Contrato entre {contratante_nome} e {contratado_nome}"
+
 
     def __str__(self):
         return self.titulo()

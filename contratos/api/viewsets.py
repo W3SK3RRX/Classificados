@@ -6,6 +6,7 @@ from rest_framework import status
 from django.db import models
 from contratos.models import Contrato
 from .serializers import ContratoSerializer, ContratoUpdateSerializer
+from django.shortcuts import get_object_or_404
 
 
 class ContratoViewSet(ModelViewSet):
@@ -47,3 +48,18 @@ class ContratoViewSet(ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @action(detail=True, methods=['post'])
+    def gerar_pdf(self, request, pk=None):
+        """
+        Gera o PDF do contrato e retorna a URL do arquivo gerado.
+        """
+        contrato = get_object_or_404(Contrato, pk=pk)
+        
+        try:
+            contrato.salvar_contrato_pdf()
+            return Response({"message": "PDF gerado com sucesso", "contrato_gerado": contrato.contrato_gerado.url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

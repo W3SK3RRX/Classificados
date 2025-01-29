@@ -1,8 +1,6 @@
 # users/urls.py
 from django.urls import path
 
-print("URLs do app 'users' carregado")
-
 from users.views import RegisterView, LoginView, LogoutView, PasswordResetRequestView, PasswordResetConfirmView
 
 urlpatterns = [

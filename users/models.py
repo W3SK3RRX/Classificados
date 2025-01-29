@@ -54,6 +54,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    def get_full_name(self):
+        """Retorna o nome completo do usuário."""
+        return f"{self.name} {self.lastname}".strip()
     
 
 class Subscription(models.Model):
