@@ -75,26 +75,46 @@ class UserWithSubscriptionCreationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def validate(self, attrs):
+        # Verifica se as senhas coincidem
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
 
+        # Verifica se o tipo de usuário é válido
         if attrs['user_type'] in [User.PROFESSIONAL, User.COMPANY] and not attrs.get('plan_id'):
             raise serializers.ValidationError({"plan_id": "O plano é obrigatório para profissionais e empresas."})
 
         return attrs
 
     def create(self, validated_data):
+        # Pegando plan_id, caso exista
         plan_id = validated_data.pop('plan_id', None)
         validated_data.pop('password_confirm')
 
+        # Criando o usuário
         user = User.objects.create_user(**validated_data)
 
+        # Se um plan_id foi fornecido, criamos a assinatura
         if plan_id:
-            plan = Plan.objects.get(id=plan_id)
-            end_date = now() + timedelta(days=plan.duration_in_days)
-            Subscription.objects.create(user=user, start_date=now(), end_date=end_date, active=True)
+            try:
+                plan = Plan.objects.get(id=plan_id)
+                # Calculando a data de término com base na duração do plano
+                end_date = now() + timedelta(days=plan.duration_in_days)
+                
+                # Criando a assinatura do usuário
+                subscription = Subscription.objects.create(
+                    user=user,
+                    start_date=now(),
+                    end_date=end_date,
+                    active=True
+                )
+
+                # Certificando-se de que a assinatura foi criada com sucesso
+                print(f"Assinatura criada para o usuário {user.email}, com plano {plan.name}.")
+            except Plan.DoesNotExist:
+                raise serializers.ValidationError({"plan_id": "Plano inválido."})
 
         return user
+
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
