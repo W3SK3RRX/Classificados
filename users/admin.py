@@ -15,6 +15,6 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'email', 'name', 'lastname', 'user_type', 'is_staff', 'is_superuser')
+    list_display = ('id', 'email', 'name', 'lastname', 'is_staff', 'is_superuser')
     search_fields = ('email', 'name', 'lastname')
-    list_filter = ('user_type', 'is_active', 'is_staff')
+    list_filter = ('is_active', 'is_staff')

@@ -12,7 +12,9 @@ from .serializers import (
     PlanSerializer,
     SubscriptionSerializer
 )
-
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 
 class UserViewSet(ModelViewSet):
@@ -35,6 +37,7 @@ class UserViewSet(ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+
 class PlanViewSet(ModelViewSet):
     """
     ViewSet para gerenciar planos.
@@ -45,7 +48,7 @@ class PlanViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated()]
-        return [AllowAny()]  # Permite acesso público para listar e visualizar planos
+        return [AllowAny()]
 
     def create(self, request, *args, **kwargs):
         """
@@ -84,23 +87,56 @@ class SubscriptionViewSet(ModelViewSet):
             plan = Plan.objects.get(id=plan_id)
             user = request.user
 
-            # Verifica se já existe uma assinatura ativa
             existing_subscription = Subscription.objects.filter(user=user, active=True).first()
             if existing_subscription:
                 return Response({"error": "O usuário já possui uma assinatura ativa."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Calcula a data de término da assinatura
             end_date = now() + timedelta(days=plan.duration_in_days)
 
-            # Cria a assinatura
             subscription = Subscription.objects.create(
                 user=user,
                 start_date=now(),
                 end_date=end_date,
-                active=True
+                active=False,  # Inicialmente inativa
+                payment_confirmed=False  # Inicialmente o pagamento não foi confirmado
             )
 
-            return Response({"message": "Assinatura criada com sucesso!", "subscription_id": subscription.id}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Assinatura criada com sucesso, aguardando confirmação de pagamento.", "subscription_id": subscription.id}, status=status.HTTP_201_CREATED)
 
         except Plan.DoesNotExist:
             return Response({"error": "Plano não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def confirm_payment(self, request, pk=None):
+        """
+        Confirma o pagamento de uma assinatura e a torna ativa, se válido.
+        """
+        subscription = self.get_object()
+
+        # Verifica se a assinatura já foi confirmada
+        if subscription.payment_confirmed:
+            return Response({"error": "Pagamento já confirmado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Marca o pagamento como confirmado e atualiza a assinatura
+        subscription.payment_confirmed = True
+        subscription.save()
+
+        return Response({"message": "Pagamento confirmado e assinatura ativada com sucesso!"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def subscription_status(self, request):
+        """
+        Endpoint para verificar o status da assinatura do usuário.
+        """
+        user = request.user
+        active_subscription = Subscription.objects.filter(user=user, active=True).first()
+
+        if active_subscription:
+            return Response({
+                "active": True,
+                "start_date": active_subscription.start_date,
+                "end_date": active_subscription.end_date
+            })
+        
+        # Se não houver assinatura ativa
+        return Response({"active": False})

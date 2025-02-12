@@ -29,21 +29,10 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    INDIVIDUAL = 'individual'
-    PROFESSIONAL = 'professional'
-    COMPANY = 'company'
-    
-    USER_TYPE_CHOICES = [
-        (INDIVIDUAL, 'Cliente'),
-        (PROFESSIONAL, 'Profissional'),
-        (COMPANY, 'Empresa'),
-    ]
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50)
     lastname = models.CharField(max_length=50)
     email = models.EmailField(unique=True)
-    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default=INDIVIDUAL)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -65,19 +54,27 @@ class Subscription(models.Model):
     start_date = models.DateTimeField(default=now)
     end_date = models.DateTimeField()
     active = models.BooleanField(default=False)
+    payment_confirmed = models.BooleanField(default=False)  # Novo campo para confirmar o pagamento
 
     def save(self, *args, **kwargs):
-        self.active = self.end_date > now()
+        # A assinatura só é ativa se o pagamento for confirmado e a data de término for no futuro
+        if self.payment_confirmed and self.end_date > now():
+            self.active = True
+        else:
+            self.active = False
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Assinatura de {self.user.email} - {'Ativa' if self.active else 'Inativa'}"
+
     
 
 class Plan(models.Model):
     name = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     duration_in_days = models.PositiveIntegerField()
+    description = models.TextField(blank=True, null=True)  # Campo para descrição do plano
 
     def __str__(self):
         return self.name

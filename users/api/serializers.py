@@ -15,19 +15,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'lastname', 'email', 'user_type', 'password', 'password_confirm']
+        fields = ['id', 'name', 'lastname', 'email', 'password', 'password_confirm']
         read_only_fields = ['id']
 
     def validate(self, attrs):
-        # Verifica se as senhas coincidem
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
-
-        # Verifica se o tipo de usuário é válido
-        valid_user_types = [choice[0] for choice in User.USER_TYPE_CHOICES]
-        if attrs.get('user_type') not in valid_user_types:
-            raise serializers.ValidationError({"user_type": "Tipo de usuário inválido."})
-
         return attrs
 
     def create(self, validated_data):
@@ -42,7 +35,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'active']
 
     def create(self, validated_data):
-        # Garante que uma assinatura válida seja criada
         if validated_data['end_date'] <= validated_data['start_date']:
             raise serializers.ValidationError("A data de término deve ser posterior à data de início.")
         return super().create(validated_data)
@@ -51,7 +43,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
-        fields = ['id', 'name', 'price', 'duration_in_days']
+        fields = ['id', 'name', 'price', 'duration_in_days', 'description']
         read_only_fields = ['id']
 
 
@@ -60,7 +52,7 @@ class UserWithSubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'lastname', 'email', 'user_type', 'subscription']
+        fields = ['id', 'name', 'lastname', 'email', 'subscription']
         read_only_fields = ['id']
 
 
@@ -71,51 +63,35 @@ class UserWithSubscriptionCreationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'lastname', 'email', 'user_type', 'password', 'password_confirm', 'plan_id']
+        fields = ['id', 'name', 'lastname', 'email', 'password', 'password_confirm', 'plan_id']
         read_only_fields = ['id']
 
     def validate(self, attrs):
-        # Verifica se as senhas coincidem
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
-
-        # Verifica se o tipo de usuário é válido
-        if attrs['user_type'] in [User.PROFESSIONAL, User.COMPANY] and not attrs.get('plan_id'):
-            raise serializers.ValidationError({"plan_id": "O plano é obrigatório para profissionais e empresas."})
-
         return attrs
 
     def create(self, validated_data):
-        # Pegando plan_id, caso exista
         plan_id = validated_data.pop('plan_id', None)
         validated_data.pop('password_confirm')
 
-        # Criando o usuário
         user = User.objects.create_user(**validated_data)
 
-        # Se um plan_id foi fornecido, criamos a assinatura
         if plan_id:
             try:
                 plan = Plan.objects.get(id=plan_id)
-                # Calculando a data de término com base na duração do plano
                 end_date = now() + timedelta(days=plan.duration_in_days)
-                
-                # Criando a assinatura do usuário
-                subscription = Subscription.objects.create(
+                Subscription.objects.create(
                     user=user,
                     start_date=now(),
                     end_date=end_date,
                     active=True
                 )
-
-                # Certificando-se de que a assinatura foi criada com sucesso
-                print(f"Assinatura criada para o usuário {user.email}, com plano {plan.name}.")
             except Plan.DoesNotExist:
                 raise serializers.ValidationError({"plan_id": "Plano inválido."})
 
         return user
-
-
+    
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()

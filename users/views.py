@@ -45,7 +45,6 @@ class LoginView(APIView):
                     "name": user.name,
                     "lastname": user.lastname,
                     "email": user.email,
-                    "user_type": user.user_type,  # Personalize conforme o modelo
                 }
             }, status=status.HTTP_200_OK)
 
